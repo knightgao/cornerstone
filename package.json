@@ -1,0 +1,16 @@
+{
+  "name": "cornerstone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx src/Queue/index.ts"
+  },
+  "keywords": [],
+  "author": "knight.gao",
+  "license": "ISC",
+  "dependencies": {
+    "tsx": "^3.13.0",
+    "typescript": "^5.2.2"
+  }
+}
