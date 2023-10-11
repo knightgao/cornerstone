@@ -2,7 +2,7 @@ class Queue {
     // 并发处理数
     private concurrent = 1;
     // 任务队列
-    private queue = [];
+    private queue: any = [];
     // 正在运行的任务
     private running = 0;
 
