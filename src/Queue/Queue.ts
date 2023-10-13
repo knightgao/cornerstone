@@ -1,56 +1,51 @@
-class Queue {
-    // 并发处理数
-    private concurrent = 1;
-    // 任务队列
-    private queue: any = [];
-    // 正在运行的任务
-    private running = 0;
+// 队列
 
-    constructor(concurrent = 1) {
-        this.concurrent = concurrent;
+// 异步队列
+
+// 控制并发
+
+export class Queue{
+    // 控制并发
+    private limitCount
+    private runningCount = 0
+    private taskList:any = [];
+    private  retryCountMap = new Map();
+    private  retryLimit:number = 3
+    constructor(limitCount:number) {
+        this.limitCount = limitCount || 1;
     }
-
-    async push(task: Function) {
-        return new Promise((resolve, reject) => {
-            // 将操作推入队列中
-            this.queue.push({ task, resolve, reject })
-
-            if (this.running < this.concurrent) {
-                this.process();
+    public push(fn:any){
+        return new Promise((resolve,reject)=>{
+            this.taskList.push({fn,resolve,reject});
+            // 如果当前运行的数量少于并发数,直接执行
+            if(this.runningCount < this.limitCount){
+                this.handleTask()
             }
         })
-
     }
 
-    async process() {
-        // 如果队列为空直接退出
-        if (this.queue.length === 0) {
-            return
-        }
-        // 取出第一个任务
-        const { task, resolve, reject } = this.queue.shift() as any;
-        // 正在运行的数量++
-        this.running++;
+    private async  handleTask(){
+        // 如果任务队列为空,则直接退出
+        if(this.taskList.length === 0) return
+        const {fn,resolve,reject} = this.taskList.shift();
+        this.runningCount++;
         try {
-            let reuslt;
-            if (typeof task === 'function') {
-                reuslt = await task()
+            resolve(await fn())
+        } catch(e){
+            if(this.retryCountMap.has(fn)){
+                this.retryCountMap.set(fn,this.retryCountMap.get(fn)+1)
             } else {
-                reuslt = await task
+                this.retryCountMap.set(fn,1)
             }
-            resolve(reuslt)
-        } catch (err) {
-            reject(err)
+            if(this.retryCountMap.get(fn) < this.retryLimit){
+                this.taskList.push({fn,resolve,reject})
+            }else {
+                reject(e)
+            }
         } finally {
-            // 不论成功还是报错，任务结束正在运行的数量--
-            this.running--;
-            // 继续处理下一个任务
-            this.process()
+            this.runningCount--;
+            this.handleTask()
         }
-
     }
-
 
 }
-
-export { Queue }
